@@ -6,7 +6,7 @@ on:
       device:
         description: 'Select device to build'
         required: true
-        default: 'nanopi-r5s'
+        default: 'x86_64'
         type: choice
         options:
           - 'armv8'
