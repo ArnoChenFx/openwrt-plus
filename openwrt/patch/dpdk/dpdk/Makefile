@@ -139,8 +139,6 @@ DRIVERS:= \
 	$(if $(CONFIG_LIBDPDK_DRIVER_ICE),net/ice) \
 	$(if $(CONFIG_LIBDPDK_DRIVER_COMMON_IAVF),common/iavf) \
 	$(if $(CONFIG_LIBDPDK_DRIVER_IXGBE),net/ixgbe) \
-	$(if $(CONFIG_LIBDPDK_DRIVER_MLX4),net/mlx4) \
-	$(if $(CONFIG_LIBDPDK_DRIVER_MLX5),net/mlx5) \
 	$(if $(CONFIG_LIBDPDK_DRIVER_MVNETA),net/mvneta) \
 	$(if $(CONFIG_LIBDPDK_DRIVER_NGBE),net/ngbe) \
 	$(if $(CONFIG_LIBDPDK_DRIVER_OCTEON_EP),net/octeon_ep) \
@@ -148,6 +146,7 @@ DRIVERS:= \
 	$(if $(CONFIG_LIBDPDK_DRIVER_PFE),net/pfe) \
 	$(if $(CONFIG_LIBDPDK_DRIVER_R8125),net/r8125) \
 	$(if $(CONFIG_LIBDPDK_DRIVER_THUNDERX),net/thunderx) \
+	$(if $(CONFIG_LIBDPDK_DRIVER_TXGBE),net/txgbe) \
 	$(if $(CONFIG_LIBDPDK_DRIVER_VIRTIO),net/virtio) \
 
 MESON_ARGS+= \
@@ -159,7 +158,7 @@ MESON_ARGS+= \
 define Package/libdpdk
   SECTION:=libs
   CATEGORY:=Libraries
-  DEPENDS:=@(x86_64||aarch64) +@KERNEL_HUGETLB_PAGE +librt +libpthread +libbpf +libpcap +libopenssl +zlib +jansson +libelf +libarchive +libbsd +libkmod +libnuma
+  DEPENDS:=@(x86_64||aarch64) +@KERNEL_HUGETLB_PAGE +librt +libpthread +libbpf +libpcap +libopenssl +zlib +jansson +libelf +libarchive +libbsd +libkmod +libnuma +libfdt
   TITLE:=Set of libraries and drivers for fast packet processing
   URL:=https://www.dpdk.org
 endef
