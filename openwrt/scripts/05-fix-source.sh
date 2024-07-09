@@ -23,7 +23,7 @@ if [ "$USE_GCC14" = y ] || [ "$USE_GCC15" = y ]; then
     rm -rf package/network/utils/iproute2
     git clone https://$github/sbwml/package_network_utils_iproute2 package/network/utils/iproute2
     # wsdd2
-    if [ "$USE_GLIBC" != "y" ]; then
+    if [ "$ENABLE_GLIBC" != "y" ]; then
         mkdir -p feeds/packages/net/wsdd2/patches
         curl -s https://$mirror/openwrt/patch/openwrt-6.x/gcc-14/wsdd2/100-wsdd2-cast-from-pointer-to-integer-of-different-size.patch > feeds/packages/net/wsdd2/patches/100-wsdd2-cast-from-pointer-to-integer-of-different-size.patch
     fi
@@ -58,7 +58,7 @@ if [ "$USE_GCC14" = y ] || [ "$USE_GCC15" = y ]; then
     # warnings about implicit function declarations during the build process.
     # This change addresses build issues in environments where some functions
     # are used without prior declaration.
-    if [ "$USE_GLIBC" = "y" ]; then
+    if [ "$ENABLE_GLIBC" = "y" ]; then
         # perl
         sed -i "/Target perl/i\TARGET_CFLAGS_PERL += -Wno-implicit-function-declaration -Wno-int-conversion\n" feeds/packages/lang/perl/Makefile
         # lucihttp
@@ -71,6 +71,11 @@ if [ "$USE_GCC14" = y ] || [ "$USE_GCC15" = y ]; then
         sed -i "s/-DNDEBUG/-DNDEBUG -Wno-implicit-function-declaration/g" feeds/luci/modules/luci-base/src/Makefile
         # uhttpd
         sed -i "/Package\/uhttpd\/install/i\TARGET_CFLAGS += -Wno-implicit-function-declaration\n" package/network/services/uhttpd/Makefile
+    fi
+    # openssh - 9.8p1
+    if [ "$version" = "snapshots-23.05" ] || [ "$version" = "rc2" ]; then
+        rm -rf feeds/packages/net/openssh
+        cp -a ../master/packages/net/openssh feeds/packages/net/openssh
     fi
 fi
 

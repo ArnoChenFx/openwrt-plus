@@ -33,6 +33,9 @@ curl -s https://$mirror/openwrt/patch/generic/0004-libquadmath-Add-libquadmath-t
 # include/rootfs.mk
 curl -s https://$mirror/openwrt/patch/generic/0005-rootfs-add-r-w-permissions-for-UCI-configuration-fil.patch | patch -p1
 
+# build: kernel: add out-of-tree kernel config
+curl -s https://$mirror/openwrt/patch/generic/0006-build-kernel-add-out-of-tree-kernel-config.patch | patch -p1
+
 # meson: add platform variable to cross-compilation file
 curl -s https://$mirror/openwrt/patch/generic/010-meson-add-platform-variable-to-cross-compilation-file.patch | patch -p1
 
@@ -77,7 +80,7 @@ else
 fi
 
 # IF USE GLIBC
-if [ "$USE_GLIBC" = "y" ]; then
+if [ "$ENABLE_GLIBC" = "y" ]; then
     # musl-libc
     git clone https://$gitea/sbwml/package_libs_musl-libc package/libs/musl-libc
     # bump fstools version
@@ -96,8 +99,18 @@ if [ "$USE_GLIBC" = "y" ]; then
     sed -i "/disable-profile/d" toolchain/glibc/common.mk
 fi
 
+# DPDK & NUMACTL
+if [ "$ENABLE_DPDK" = "y" ]; then
+    mkdir -p package/new/{dpdk/patches,numactl}
+    curl -s https://$mirror/openwrt/patch/dpdk/dpdk/Makefile > package/new/dpdk/Makefile
+    curl -s https://$mirror/openwrt/patch/dpdk/dpdk/Config.in > package/new/dpdk/Config.in
+    curl -s https://$mirror/openwrt/patch/dpdk/dpdk/patches/010-dpdk_arm_build_platform_fix.patch > package/new/dpdk/patches/010-dpdk_arm_build_platform_fix.patch
+    curl -s https://$mirror/openwrt/patch/dpdk/dpdk/patches/201-r8125-add-r8125-ethernet-poll-mode-driver.patch > package/new/dpdk/patches/201-r8125-add-r8125-ethernet-poll-mode-driver.patch
+    curl -s https://$mirror/openwrt/patch/dpdk/numactl/Makefile > package/new/numactl/Makefile
+fi
+
 # mold
-if [ "$USE_MOLD" = "y" ]; then
+if [ "$ENABLE_MOLD" = "y" ]; then
     curl -s https://$mirror/openwrt/patch/openwrt-6.x/mold/0001-build-add-support-to-use-the-mold-linker-for-package.patch | patch -p1
     curl -s https://$mirror/openwrt/patch/openwrt-6.x/mold/0002-treewide-opt-out-of-tree-wide-mold-usage.patch | patch -p1
     curl -s https://$mirror/openwrt/patch/openwrt-6.x/mold/0003-toolchain-add-mold-as-additional-linker.patch | patch -p1
@@ -123,14 +136,14 @@ curl -s https://$mirror/openwrt/patch/util-linux/util-linux_ntfs3.patch > packag
 
 # fstools - enable any device with non-MTD rootfs_data volume
 curl -s https://$mirror/openwrt/patch/fstools/block-mount-add-fstools-depends.patch | patch -p1
-if [ "$USE_GLIBC" = "y" ]; then
+if [ "$ENABLE_GLIBC" = "y" ]; then
     curl -s https://$mirror/openwrt/patch/fstools/fstools-set-ntfs3-utf8-new.patch > package/system/fstools/patches/ntfs3-utf8.patch
     curl -s https://$mirror/openwrt/patch/fstools/glibc/0001-libblkid-tiny-add-support-for-XFS-superblock.patch > package/system/fstools/patches/0001-libblkid-tiny-add-support-for-XFS-superblock.patch
     curl -s https://$mirror/openwrt/patch/fstools/glibc/0003-block-add-xfsck-support.patch > package/system/fstools/patches/0003-block-add-xfsck-support.patch
 else
     curl -s https://$mirror/openwrt/patch/fstools/fstools-set-ntfs3-utf8-new.patch > package/system/fstools/patches/ntfs3-utf8.patch
 fi
-if [ "$USE_GLIBC" = "y" ]; then
+if [ "$ENABLE_GLIBC" = "y" ]; then
     curl -s https://$mirror/openwrt/patch/fstools/22-fstools-support-extroot-for-non-MTD-rootfs_data-new-version.patch > package/system/fstools/patches/22-fstools-support-extroot-for-non-MTD-rootfs_data.patch
 else
     curl -s https://$mirror/openwrt/patch/fstools/22-fstools-support-extroot-for-non-MTD-rootfs_data.patch > package/system/fstools/patches/22-fstools-support-extroot-for-non-MTD-rootfs_data.patch
@@ -191,6 +204,10 @@ pushd feeds/luci
 popd
 
 # openssl - quictls
+if [ "$version" = "rc2" ]; then
+    rm -rf package/libs/openssl
+    cp -a ../master/openwrt-23.05/package/libs/openssl package/libs/openssl
+fi
 pushd package/libs/openssl/patches
     curl -sO https://$mirror/openwrt/patch/openssl/quic/0001-QUIC-Add-support-for-BoringSSL-QUIC-APIs.patch
     curl -sO https://$mirror/openwrt/patch/openssl/quic/0002-QUIC-New-method-to-get-QUIC-secret-length.patch
@@ -417,6 +434,7 @@ curl -so files/root/.bashrc https://$mirror/openwrt/files/root/.bashrc
 # rootfs files
 mkdir -p files/etc/sysctl.d
 curl -so files/etc/sysctl.d/15-vm-swappiness.conf https://$mirror/openwrt/files/etc/sysctl.d/15-vm-swappiness.conf
+curl -so files/etc/sysctl.d/16-udp-buffer-size.conf https://$mirror/openwrt/files/etc/sysctl.d/16-udp-buffer-size.conf
 
 # NTP
 sed -i 's/0.openwrt.pool.ntp.org/ntp1.aliyun.com/g' package/base-files/files/bin/config_generate
