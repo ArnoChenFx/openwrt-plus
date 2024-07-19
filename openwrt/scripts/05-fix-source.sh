@@ -79,6 +79,16 @@ if [ "$USE_GCC14" = y ] || [ "$USE_GCC15" = y ]; then
     fi
 fi
 
+# fix gcc-15
+if [ "$USE_GCC15" = y ]; then
+    # Mbedtls
+    curl -s https://$mirror/openwrt/patch/gcc-15-dev/mbedtls/901-tests-fix-string-initialization-error-on-gcc15.patch > package/libs/mbedtls/patches/901-tests-fix-string-initialization-error-on-gcc15.patch
+    # elfutils
+    curl -s https://$mirror/openwrt/patch/gcc-15-dev/elfutils/901-backends-fix-string-initialization-error-on-gcc15.patch > package/libs/elfutils/patches/901-backends-fix-string-initialization-error-on-gcc15.patch
+    # libwebsockets
+    curl -s https://$mirror/openwrt/patch/gcc-15-dev/libwebsockets/901-fix-string-initialization-error-on-gcc15.patch > feeds/packages/libs/libwebsockets/patches/901-fix-string-initialization-error-on-gcc15.patch
+fi
+
 # xdp-tools
 [ "$platform" != "x86_64" ] && sed -i '/TARGET_LDFLAGS +=/iTARGET_CFLAGS += -Wno-error=maybe-uninitialized -ffat-lto-objects\n' package/network/utils/xdp-tools/Makefile
 [ "$platform" = "x86_64" ] && sed -i '/TARGET_LDFLAGS +=/iTARGET_CFLAGS += -ffat-lto-objects\n' package/network/utils/xdp-tools/Makefile
@@ -96,7 +106,7 @@ sed -i 's/bind interfaces only = yes/bind interfaces only = no/g' feeds/packages
 
 # vim - fix E1187: Failed to source defaults.vim
 pushd feeds/packages
-    curl -s https://github.com/openwrt/packages/commit/699d3fbee266b676e21b7ed310471c0ed74012c9.patch | patch -p1
+    curl -s https://$mirror/openwrt/patch/vim/0001-vim-fix-renamed-defaults-config-file.patch | patch -p1
 popd
 
 # bpf - add host clang-15/17 support

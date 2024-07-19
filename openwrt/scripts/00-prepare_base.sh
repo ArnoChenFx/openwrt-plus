@@ -36,6 +36,9 @@ curl -s https://$mirror/openwrt/patch/generic/0005-rootfs-add-r-w-permissions-fo
 # build: kernel: add out-of-tree kernel config
 curl -s https://$mirror/openwrt/patch/generic/0006-build-kernel-add-out-of-tree-kernel-config.patch | patch -p1
 
+# rootfs: Add support for local kmod installation sources
+curl -s https://$mirror/openwrt/patch/generic/0007-rootfs-Add-support-for-local-kmod-installation-sourc.patch | patch -p1
+
 # meson: add platform variable to cross-compilation file
 curl -s https://$mirror/openwrt/patch/generic/010-meson-add-platform-variable-to-cross-compilation-file.patch | patch -p1
 
@@ -323,13 +326,12 @@ sed -i 's/procd_set_param stderr 1/procd_set_param stderr 0/g' feeds/packages/ut
 
 # UPnP
 rm -rf feeds/packages/net/miniupnpd
-git clone https://$gitea/sbwml/miniupnpd feeds/packages/net/miniupnpd
+git clone https://$gitea/sbwml/miniupnpd feeds/packages/net/miniupnpd -b v2.3.6
 rm -rf feeds/luci/applications/luci-app-upnp
 git clone https://$gitea/sbwml/luci-app-upnp feeds/luci/applications/luci-app-upnp
 pushd feeds/packages
     curl -s https://$mirror/openwrt/patch/miniupnpd/01-set-presentation_url.patch | patch -p1
     curl -s https://$mirror/openwrt/patch/miniupnpd/02-force_forwarding.patch | patch -p1
-    curl -s https://$mirror/openwrt/patch/miniupnpd/03-Update-301-options-force_forwarding-support.patch.patch | patch -p1
     curl -s https://$mirror/openwrt/patch/miniupnpd/04-enable-force_forwarding-by-default.patch | patch -p1
 popd
 
@@ -344,7 +346,7 @@ popd
 
 # nginx - latest version
 rm -rf feeds/packages/net/nginx
-git clone https://$github/sbwml/feeds_packages_net_nginx feeds/packages/net/nginx -b quic
+git clone https://$github/sbwml/feeds_packages_net_nginx feeds/packages/net/nginx -b quic+zstd
 sed -i 's/procd_set_param stdout 1/procd_set_param stdout 0/g;s/procd_set_param stderr 1/procd_set_param stderr 0/g' feeds/packages/net/nginx/files/nginx.init
 
 # nginx - ubus
@@ -354,6 +356,10 @@ sed -i '/ubus_parallel_req/a\        ubus_script_timeout 600;' feeds/packages/ne
 # nginx - uwsgi timeout & enable brotli
 curl -s https://$mirror/openwrt/nginx/luci.locations > feeds/packages/net/nginx/files-luci-support/luci.locations
 curl -s https://$mirror/openwrt/nginx/uci.conf.template > feeds/packages/net/nginx-util/files/uci.conf.template
+
+# zstd - bump version
+rm -rf feeds/packages/utils/zstd
+cp -a ../master/packages/utils/zstd feeds/packages/utils/zstd
 
 # opkg
 mkdir -p package/system/opkg/patches
