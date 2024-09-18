@@ -14,7 +14,7 @@ jobs:
         with:
           ref: 'master'
           fetch-depth: 0
-          token: ${{ secrets.OPENWRT_WORKFLOW_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Configure Git
         run: |
@@ -23,7 +23,7 @@ jobs:
 
       - name: Merge upstream changes
         run: |
-          git remote add upstream https://github.com/sbwml/r4s_build_script.git
+          git remote add upstream https://github.com/pmkol/openwrt-plus.git
           git fetch upstream
           git merge upstream/master --allow-unrelated-histories --no-edit || exit 1
 
