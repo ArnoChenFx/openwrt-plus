@@ -44,7 +44,11 @@ fi
 export gitea=git.cooluc.com
 
 # github mirror
-export github=github.com
+if [ "$isCN" = "CN" ]; then
+    export github="ghp.ci/github.com"
+else
+    export github="github.com"
+fi
 
 # Check root
 if [ "$(id -u)" = "0" ]; then

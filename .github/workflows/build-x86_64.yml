@@ -71,7 +71,7 @@ jobs:
       run: |
         export PATH="/opt/clang/bin:$PATH"
         mkdir /opt/clang
-        curl -LO https://github.com/sbwml/redhat-llvm-project/releases/download/18.1.8/clang-18.1.8-x86_64-redhat-linux.tar.xz --progress-bar
+        curl -LO https://github.com/pmkol/redhat-llvm-project/releases/download/18.1.8/clang-18.1.8-x86_64-redhat-linux.tar.xz --progress-bar
         sudo tar --strip-components=1 -C /opt/clang -xf clang-18.1.8-x86_64-redhat-linux.tar.xz
         rm -rf clang-18.1.8-x86_64-redhat-linux.tar.xz
         clang --version
@@ -83,7 +83,7 @@ jobs:
       run: |
         export PATH="/opt/clang/bin:$PATH"
         export GITHUB_REPO=${{ github.repository }}
-        export KERNEL_CLANG_LTO=y BUILD_FAST=y ENABLE_UHTTPD=y ENABLE_LTO=y ENABLE_LRNG=y ENABLE_BPF=y USE_GCC14=y ENABLE_DPDK=y ENABLE_MOLD=y
+        export KERNEL_CLANG_LTO=y ENABLE_UHTTPD=y ENABLE_LTO=y ENABLE_LRNG=y ENABLE_BPF=y USE_GCC14=y ENABLE_DPDK=y ENABLE_MOLD=y
         bash <(curl -sS https://raw.githubusercontent.com/${{ github.repository }}/x86_64/openwrt/build.sh) ${{ matrix.tag.type }} ${{ matrix.model }}
         cd openwrt
         tags=$(git describe --abbrev=0 --tags)
@@ -137,7 +137,7 @@ jobs:
 
     - name: Create release
       continue-on-error: true
-      uses: sbwml/release-action@main
+      uses: pmkol/release-action@main
       with:
         name: OpenWrt-${{ env.latest_release }}
         allowUpdates: true
