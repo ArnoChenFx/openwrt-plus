@@ -67,23 +67,13 @@ jobs:
         git config --global user.name 'GitHub Actions' && git config --global user.email 'noreply@github.com'
         df -Th
 
-    - name: Install LLVM
-      run: |
-        export PATH="/opt/clang/bin:$PATH"
-        mkdir /opt/clang
-        curl -LO https://github.com/pmkol/redhat-llvm-project/releases/download/18.1.8/clang-18.1.8-x86_64-redhat-linux.tar.xz --progress-bar
-        sudo tar --strip-components=1 -C /opt/clang -xf clang-18.1.8-x86_64-redhat-linux.tar.xz
-        rm -rf clang-18.1.8-x86_64-redhat-linux.tar.xz
-        clang --version
-
     - name: Compile OpenWrt
       working-directory: /builder
       id: compile
       continue-on-error: true
       run: |
-        export PATH="/opt/clang/bin:$PATH"
         export GITHUB_REPO=${{ github.repository }}
-        export KERNEL_CLANG_LTO=y ENABLE_UHTTPD=y ENABLE_LTO=y ENABLE_LRNG=y ENABLE_BPF=y USE_GCC14=y ENABLE_MOLD=y
+        export TESTING_KERNEL=y KERNEL_CLANG_LTO=y ENABLE_UHTTPD=y ENABLE_LTO=y ENABLE_LRNG=y ENABLE_BPF=y USE_GCC14=y ENABLE_MOLD=y
         bash <(curl -sS https://raw.githubusercontent.com/${{ github.repository }}/x86_64/openwrt/build.sh) ${{ matrix.tag.type }} ${{ matrix.model }}
         cd openwrt
         tags=$(git describe --abbrev=0 --tags)
@@ -93,7 +83,6 @@ jobs:
       working-directory: /builder
       if: steps.compile.outcome == 'failure'
       run: |
-        export PATH="/opt/clang/bin:$PATH"
         cd openwrt
         make V=s
 

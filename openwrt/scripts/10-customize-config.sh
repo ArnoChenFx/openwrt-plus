@@ -4,6 +4,8 @@ rm -rf package/new/helloworld/patch-luci-app-ssr-plus.patch
 
 # add mihomo
 git clone https://$github/pmkol/openwrt-mihomo package/new/openwrt-mihomo
+rm -rf package/new/helloworld/luci-app-mihomo
+rm -rf package/new/helloworld/mihomo
 if curl -s "https://$mirror/openwrt/23-config-common" | grep -q "^CONFIG_PACKAGE_luci-app-mihomo=y"; then
     mkdir -p files/etc/mihomo/run/ui
     curl -Lso files/etc/mihomo/run/geoip.metadb https://$github/MetaCubeX/meta-rules-dat/releases/download/latest/geoip-lite.metadb
@@ -26,6 +28,10 @@ sed -i '/ADDON+=USE_QUIC_OPENSSL_COMPAT=1/d' feeds/packages/net/haproxy/Makefile
 # change golang to amd64-v2 microarchitecture
 sed -i 's/GO_AMD64:=v1/GO_AMD64:=v2/g' feeds/packages/lang/golang/golang-values.mk
 
+# remove mkbuild patch
+rm -rf target/linux/generic/hack-6.6/991-mkbuild.patch
+rm -rf target/linux/generic/hack-6.11/991-mkbuild.patch
+
 # add natflow by default
 sed -i 's|\[\ \$(grep\ -c\ shortcut_fe\ /etc/config/firewall)\ -eq\ '\''0'\''\ \]\ \&\&\ uci\ set\ firewall.@defaults\[0\].flow_offloading='\''1'\''|\[\ \$(grep\ -c\ shortcut_fe\ /etc/config/firewall)\ -eq\ '\''0'\''\ \]\ \&\&\ \[\ \$(grep\ -c\ natflow_delay_pkts\ /etc/config/firewall)\ -eq\ '\''0'\''\ \]\ \&\&\ uci\ set\ firewall.@defaults\[0\].flow_offloading='\''1'\''|g' package/new/default-settings/default/zzz-default-settings
 
@@ -43,7 +49,7 @@ sed -i '/# opkg mirror/a echo -e '\''untrusted comment: Public usign key for 23.
 sed -i '/openwrt_extras/d' package/new/default-settings/default/zzz-default-settings
 
 # comment out the following line to use kmod proxy
-sed -i 's#ghp.ci/raw.githubusercontent.com/sbwml/kmod-#raw.githubusercontent.com/sbwml/kmod-#g' package/new/default-settings/default/zzz-default-settings
+sed -i 's#ghp.ci/raw.githubusercontent.com/sbwml#raw.githubusercontent.com/sbwml#g' package/new/default-settings/default/zzz-default-settings
 
 # comment out the following line to restore the full description
 sed -i '/# timezone/i sed -i "s/\\(DISTRIB_DESCRIPTION=\\).*/\\1'\''OpenWrt $(sed -n "s/DISTRIB_DESCRIPTION='\''OpenWrt \\([^ ]*\\) .*/\\1/p" /etc/openwrt_release)'\'',/" /etc/openwrt_release\nsource /etc/openwrt_release \&\& sed -i -e "s/distversion\\s=\\s\\".*\\"/distversion = \\"$DISTRIB_ID $DISTRIB_RELEASE ($DISTRIB_REVISION)\\"/g" -e '\''s/distname    = .*$/distname    = ""/g'\'' /usr/lib/lua/luci/version.lua\nsed -i "s/luciname    = \\".*\\"/luciname    = \\"LuCI openwrt-23.05\\"/g" /usr/lib/lua/luci/version.lua\nsed -i "s/luciversion = \\".*\\"/luciversion = \\"v'$(date +%Y%m%d)'\\"/g" /usr/lib/lua/luci/version.lua\necho "export const revision = '\''v'$(date +%Y%m%d)'\'\'', branch = '\''LuCI openwrt-23.05'\'';" > /usr/share/ucode/luci/version.uc\n/etc/init.d/rpcd restart\n' package/new/default-settings/default/zzz-default-settings
