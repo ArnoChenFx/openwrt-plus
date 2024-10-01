@@ -1,4 +1,4 @@
-name: Build sync releases
+name: Build sync kernel-6.6
 
 on:
   workflow_dispatch:
@@ -6,7 +6,8 @@ on:
     branches:
       - master
     paths:
-      - 'tags/**'
+      - 'tags/kernel-6.6'
+      - 'tags/v23'
 
 jobs:
   build:
@@ -20,7 +21,6 @@ jobs:
       fail-fast: false
       matrix:
         model:
-          - armv8
           - nanopi-r4s
           - nanopi-r5s
           - x86_64
@@ -101,21 +101,11 @@ jobs:
         sudo chown -R runner:runner /builder
         df -Th
 
-    - name: Install LLVM
-      run: |
-        export PATH="/opt/clang/bin:$PATH"
-        mkdir /opt/clang
-        curl -LO https://github.com/sbwml/redhat-llvm-project/releases/download/18.1.8/clang-18.1.8-x86_64-redhat-linux.tar.xz --progress-bar
-        sudo tar --strip-components=1 -C /opt/clang -xf clang-18.1.8-x86_64-redhat-linux.tar.xz
-        rm -rf clang-18.1.8-x86_64-redhat-linux.tar.xz
-        clang --version
-
     - name: Compile OpenWrt
       working-directory: /builder
       id: compile
       continue-on-error: true
       run: |
-        export PATH="/opt/clang/bin:$PATH"
         export GITHUB_REPO=${{ github.repository }}
         export KERNEL_CLANG_LTO=y BUILD_FAST=y ENABLE_UHTTPD=y ENABLE_LTO=y ENABLE_LRNG=y ENABLE_BPF=y USE_GCC14=y ENABLE_MOLD=y
         bash <(curl -sS https://raw.githubusercontent.com/${{ github.repository }}/master/openwrt/build.sh) ${{ matrix.tag.type }} ${{ matrix.model }}
@@ -128,7 +118,6 @@ jobs:
       working-directory: /builder
       if: steps.compile.outcome == 'failure'
       run: |
-        export PATH="/opt/clang/bin:$PATH"
         cd openwrt
         make V=s
 

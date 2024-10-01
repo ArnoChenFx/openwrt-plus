@@ -17,7 +17,7 @@ on:
       build_options:
         description: 'Build options (separate multiple options with spaces)'
         required: false
-        default: 'KERNEL_CLANG_LTO=y BUILD_FAST=y ENABLE_UHTTPD=y ENABLE_LTO=y ENABLE_MOLD=y ENABLE_LRNG=y ENABLE_BPF=y USE_GCC14=y'
+        default: 'BUILD_FAST=y ENABLE_UHTTPD=y ENABLE_BPF=y ENABLE_LTO=y ENABLE_LRNG=y ENABLE_MOLD=y KERNEL_CLANG_LTO=y USE_GCC14=y'
         type: string
 
 jobs:
@@ -57,9 +57,6 @@ jobs:
 
     - name: Build System Setup
       uses: sbwml/actions@openwrt-build-setup
-
-    - name: Install LLVM
-      uses: sbwml/actions@install-llvm
 
     - name: Compile OpenWrt
       working-directory: /builder
@@ -121,7 +118,7 @@ jobs:
 
     - name: Create release
       continue-on-error: true
-      uses: sbwml/release-action@main
+      uses: ncipollo/release-action@v1
       with:
         name: OpenWrt-${{ env.latest_release }}
         allowUpdates: true
