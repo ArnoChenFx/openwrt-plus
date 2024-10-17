@@ -2,7 +2,14 @@
 
 #################################################################
 
-# Rockchip - target - r4s/r5s only
+# autocore
+if [ "$version" = "rc2" ]; then
+    git clone https://$github/sbwml/autocore-arm -b openwrt-23.05 package/system/autocore
+else
+    git clone https://$github/sbwml/autocore-arm -b openwrt-24.10 package/system/autocore
+fi
+
+# rockchip - target - r4s/r5s only
 rm -rf target/linux/rockchip
 git clone https://nanopi:nanopi@$gitea/sbwml/target_linux_rockchip-6.x target/linux/rockchip -b linux-6.6
 
@@ -12,15 +19,15 @@ curl -s https://$mirror/openwrt/patch/openwrt-6.x/x86/config-6.6 > target/linux/
 mkdir -p target/linux/x86/patches-6.6
 curl -s https://$mirror/openwrt/patch/openwrt-6.x/x86/patches-6.6/100-fix_cs5535_clockevt.patch > target/linux/x86/patches-6.6/100-fix_cs5535_clockevt.patch
 curl -s https://$mirror/openwrt/patch/openwrt-6.x/x86/patches-6.6/103-pcengines_apu6_platform.patch > target/linux/x86/patches-6.6/103-pcengines_apu6_platform.patch
-# x86_64 - target 6.11
-curl -s https://$mirror/openwrt/patch/openwrt-6.x/x86/64/config-6.11 > target/linux/x86/64/config-6.11
-curl -s https://$mirror/openwrt/patch/openwrt-6.x/x86/config-6.11 > target/linux/x86/config-6.11
-mkdir -p target/linux/x86/patches-6.11
-curl -s https://$mirror/openwrt/patch/openwrt-6.x/x86/patches-6.11/100-fix_cs5535_clockevt.patch > target/linux/x86/patches-6.11/100-fix_cs5535_clockevt.patch
-curl -s https://$mirror/openwrt/patch/openwrt-6.x/x86/patches-6.11/103-pcengines_apu6_platform.patch > target/linux/x86/patches-6.11/103-pcengines_apu6_platform.patch
+# x86_64 - target 6.12
+curl -s https://$mirror/openwrt/patch/openwrt-6.x/x86/64/config-6.12 > target/linux/x86/64/config-6.12
+curl -s https://$mirror/openwrt/patch/openwrt-6.x/x86/config-6.12 > target/linux/x86/config-6.12
+mkdir -p target/linux/x86/patches-6.12
+curl -s https://$mirror/openwrt/patch/openwrt-6.x/x86/patches-6.12/100-fix_cs5535_clockevt.patch > target/linux/x86/patches-6.12/100-fix_cs5535_clockevt.patch
+curl -s https://$mirror/openwrt/patch/openwrt-6.x/x86/patches-6.12/103-pcengines_apu6_platform.patch > target/linux/x86/patches-6.12/103-pcengines_apu6_platform.patch
 # x86_64 - target
 sed -ri "s/(KERNEL_PATCHVER:=)[^\"]*/\16.6/" target/linux/x86/Makefile
-sed -i '/KERNEL_PATCHVER/a\KERNEL_TESTING_PATCHVER:=6.11' target/linux/x86/Makefile
+sed -i '/KERNEL_PATCHVER/a\KERNEL_TESTING_PATCHVER:=6.12' target/linux/x86/Makefile
 curl -s https://$mirror/openwrt/patch/openwrt-6.x/x86/base-files/etc/board.d/01_leds > target/linux/x86/base-files/etc/board.d/01_leds
 curl -s https://$mirror/openwrt/patch/openwrt-6.x/x86/base-files/etc/board.d/02_network > target/linux/x86/base-files/etc/board.d/02_network
 
@@ -36,7 +43,7 @@ git clone https://nanopi:nanopi@$gitea/sbwml/target_linux_armsr target/linux/arm
 
 # kernel - 6.x
 curl -s https://$mirror/tags/kernel-6.6 > include/kernel-6.6
-curl -s https://$mirror/tags/kernel-6.11 > include/kernel-6.11
+curl -s https://$mirror/tags/kernel-6.12 > include/kernel-6.12
 
 # kenrel Vermagic
 sed -ie 's/^\(.\).*vermagic$/\1cp $(TOPDIR)\/.vermagic $(LINUX_DIR)\/.vermagic/' include/kernel-defaults.mk
@@ -46,7 +53,7 @@ grep HASH include/kernel-$kernel_version | awk -F'HASH-' '{print $2}' | awk '{pr
 rm -rf target/linux/generic
 local_kernel_version=$(sed -n 's/^LINUX_KERNEL_HASH-\([0-9.]\+\) = .*/\1/p' include/kernel-$kernel_version)
 release_kernel_version=$(curl -sL https://raw.githubusercontent.com/sbwml/r4s_build_script/master/tags/kernel-$kernel_version | sed -n 's/^LINUX_KERNEL_HASH-\([0-9.]\+\) = .*/\1/p')
-if [ "$local_kernel_version" = "$release_kernel_version" ] && [ -z "$git_password" ]; then
+if [ "$local_kernel_version" = "$release_kernel_version" ] && [ -z "$git_password" ] && [ "$(whoami)" != "sbwml" ]; then
     git clone https://$github/sbwml/target_linux_generic -b main target/linux/generic --depth=1
 else
     if [ "$(whoami)" = "runner" ]; then
@@ -58,7 +65,7 @@ else
 fi
 
 # bcm53xx - fix build kernel with clang
-[ "$platform" = "bcm53xx" ] && [ "$KERNEL_CLANG_LTO" = "y" ] && rm -f target/linux/generic/hack-6.6/220-arm-gc_sections.patch target/linux/generic/hack-6.11/220-arm-gc_sections.patch
+[ "$platform" = "bcm53xx" ] && [ "$KERNEL_CLANG_LTO" = "y" ] && rm -f target/linux/generic/hack-6.6/220-arm-gc_sections.patch target/linux/generic/hack-6.12/220-arm-gc_sections.patch
 
 # kernel modules
 rm -rf package/kernel/linux
@@ -93,7 +100,7 @@ pushd package/kernel/linux/modules
     curl -Os https://$mirror/openwrt/patch/openwrt-6.x/modules/wpan.mk
 popd
 
-# BBRv3 - linux-6.6/6.11
+# BBRv3 - linux-6.6/6.12
 pushd target/linux/generic/backport-"$kernel_version"
     curl -Os https://$mirror/openwrt/patch/kernel-"$kernel_version"/bbr3/010-bbr3-0001-net-tcp_bbr-broaden-app-limited-rate-sample-detectio.patch
     curl -Os https://$mirror/openwrt/patch/kernel-"$kernel_version"/bbr3/010-bbr3-0002-net-tcp_bbr-v2-shrink-delivered_mstamp-first_tx_msta.patch
@@ -116,7 +123,7 @@ pushd target/linux/generic/backport-"$kernel_version"
     [ "$TESTING_KERNEL" = "y" ] && curl -Os https://$mirror/openwrt/patch/kernel-"$kernel_version"/bbr3/010-bbr3-0019-x86-cfi-bpf-Add-tso_segs-and-skb_marked_lost-to-bpf_.patch
 popd
 
-# LRNG v54/56 - linux-6.6/6.11
+# LRNG v54/56 - linux-6.6/6.12
 pushd target/linux/generic/hack-$kernel_version
     curl -Os https://$mirror/openwrt/patch/kernel-"$kernel_version"/lrng/011-LRNG-0001-LRNG-Entropy-Source-and-DRNG-Manager.patch
     curl -Os https://$mirror/openwrt/patch/kernel-"$kernel_version"/lrng/011-LRNG-0002-LRNG-allocate-one-DRNG-instance-per-NUMA-node.patch
@@ -150,7 +157,7 @@ rm -rf package/firmware/linux-firmware
 git clone https://$github/sbwml/package_firmware_linux-firmware package/firmware/linux-firmware
 
 if [ "$TESTING_KERNEL" = "y" ]; then
-    # rtl8812au-ct - fix linux-6.11
+    # rtl8812au-ct - fix linux-6.12
     rm -rf package/kernel/rtl8812au-ct
     git clone https://$github/sbwml/package_kernel_rtl8812au-ct package/kernel/rtl8812au-ct -b v6.11
     # add rtl8812au-ac
@@ -167,24 +174,36 @@ fi
 rm -rf package/kernel/mt76
 mkdir -p package/kernel/mt76/patches
 curl -s https://$mirror/openwrt/patch/mt76/Makefile > package/kernel/mt76/Makefile
-curl -s https://$mirror/openwrt/patch/mt76/patches/100-fix-build-with-mac80211-6.11-backport.patch > package/kernel/mt76/patches/100-fix-build-with-mac80211-6.11-backport.patch
+[ "$TESTING_KERNEL" = "y" ] && {
+    curl -s https://$mirror/openwrt/patch/mt76/patches/100-fix-build-with-mac80211-6.11-backport.patch > package/kernel/mt76/patches/100-fix-build-with-mac80211-6.11-backport.patch
+    curl -s https://$mirror/openwrt/patch/mt76/patches/101-fix-build-with-linux-6.12rc2.patch > package/kernel/mt76/patches/101-fix-build-with-linux-6.12rc2.patch
+}
+[ "$version" = "snapshots-24.10" ] && curl -s https://$mirror/openwrt/patch/mt76/patches/100-api_update.patch > package/kernel/mt76/patches/100-api_update.patch
 
 # iwinfo: add mt7922 device id
-mkdir -p package/network/utils/iwinfo/patches
-curl -s https://$mirror/openwrt/patch/openwrt-6.x/iwinfo/0001-devices-add-MediaTek-MT7922-device-id.patch > package/network/utils/iwinfo/patches/0001-devices-add-MediaTek-MT7922-device-id.patch
+if [ "$version" = "rc2" ]; then
+    mkdir -p package/network/utils/iwinfo/patches
+    curl -s https://$mirror/openwrt/patch/openwrt-6.x/iwinfo/0001-devices-add-MediaTek-MT7922-device-id.patch > package/network/utils/iwinfo/patches/0001-devices-add-MediaTek-MT7922-device-id.patch
+fi
 
 # iwinfo: add rtl8812/14/21au devices
-curl -s https://$mirror/openwrt/patch/openwrt-6.x/iwinfo/0004-add-rtl8812au-devices.patch > package/network/utils/iwinfo/patches/0004-add-rtl8812au-devices.patch
+[ "$version" = "rc2" ] && curl -s https://$mirror/openwrt/patch/openwrt-6.x/iwinfo/0004-add-rtl8812au-devices.patch > package/network/utils/iwinfo/patches/0004-add-rtl8812au-devices.patch
 
 # wireless-regdb
-rm -rf package/firmware/wireless-regdb
-cp -a ../master/openwrt/package/firmware/wireless-regdb package/firmware/wireless-regdb
+if [ "$version" = "rc2" ]; then
+    rm -rf package/firmware/wireless-regdb
+    cp -a ../master/openwrt/package/firmware/wireless-regdb package/firmware/wireless-regdb
+fi
 curl -s https://$mirror/openwrt/patch/openwrt-6.x/500-world-regd-5GHz.patch > package/firmware/wireless-regdb/patches/500-world-regd-5GHz.patch
 
 # mac80211 - fix linux 6.6 & add rtw89
 rm -rf package/kernel/mac80211
-git clone https://$github/sbwml/package_kernel_mac80211 package/kernel/mac80211 -b v6.11
-[ "$TESTING_KERNEL" = "y" ] && rm -f package/kernel/mac80211/patches/build/140-trace_backport.patch
+if [ "$version" = "rc2" ]; then
+    git clone https://$github/sbwml/package_kernel_mac80211 package/kernel/mac80211 -b v6.11
+    [ "$TESTING_KERNEL" = "y" ] && rm -f package/kernel/mac80211/patches/build/140-trace_backport.patch
+else
+    git clone https://$github/sbwml/package_kernel_mac80211 package/kernel/mac80211 -b openwrt-24.10
+fi
 
 # ath10k-ct
 rm -rf package/kernel/ath10k-ct
@@ -198,13 +217,15 @@ curl -s https://$mirror/openwrt/patch/kernel-$kernel_version/arm64/312-arm64-cpu
 # fullcone
 curl -s https://$mirror/openwrt/patch/kernel-$kernel_version/net/952-net-conntrack-events-support-multiple-registrant.patch > target/linux/generic/hack-$kernel_version/952-net-conntrack-events-support-multiple-registrant.patch
 # bcm-fullcone
-curl -s https://$mirror/openwrt/patch/kernel-$kernel_version/net/982-add-bcm-fullcone-support.patch > target/linux/generic/hack-$kernel_version/982-add-bcm-fullcone-support.patch
-curl -s https://$mirror/openwrt/patch/kernel-$kernel_version/net/983-add-bcm-fullcone-nft_masq-support.patch > target/linux/generic/hack-$kernel_version/983-add-bcm-fullcone-nft_masq-support.patch
+[ "$TESTING_KERNEL" != "y" ] && {
+    curl -s https://$mirror/openwrt/patch/kernel-$kernel_version/net/982-add-bcm-fullcone-support.patch > target/linux/generic/hack-$kernel_version/982-add-bcm-fullcone-support.patch
+    curl -s https://$mirror/openwrt/patch/kernel-$kernel_version/net/983-add-bcm-fullcone-nft_masq-support.patch > target/linux/generic/hack-$kernel_version/983-add-bcm-fullcone-nft_masq-support.patch
+}
 # shortcut-fe
 curl -s https://$mirror/openwrt/patch/kernel-$kernel_version/net/601-netfilter-export-udp_get_timeouts-function.patch > target/linux/generic/hack-$kernel_version/601-netfilter-export-udp_get_timeouts-function.patch
 curl -s https://$mirror/openwrt/patch/kernel-$kernel_version/net/953-net-patch-linux-kernel-to-support-shortcut-fe.patch > target/linux/generic/hack-$kernel_version/953-net-patch-linux-kernel-to-support-shortcut-fe.patch
 # backport - 6.8 fast-path-variables
-if [ "$platform" != "bcm53xx" ] && [ "$TESTING_KERNEL" != "y" ]; then
+if [ "$version" = "rc2" ] && [ "$platform" != "bcm53xx" ] && [ "$TESTING_KERNEL" != "y" ]; then
     curl -s https://$mirror/openwrt/patch/kernel-6.6/backport/901-v6.8-cache-enforce-cache-groups.patch > target/linux/generic/backport-6.6/901-v6.8-cache-enforce-cache-groups.patch
     curl -s https://$mirror/openwrt/patch/kernel-6.6/backport/902-v6.8-netns-ipv4-reorganize-netns_ipv4-fast-path-variables.patch > target/linux/generic/backport-6.6/902-v6.8-netns-ipv4-reorganize-netns_ipv4-fast-path-variables.patch
     curl -s https://$mirror/openwrt/patch/kernel-6.6/backport/903-v6.8-net-device-reorganize-net_device-fast-path-variables.patch > target/linux/generic/backport-6.6/903-v6.8-net-device-reorganize-net_device-fast-path-variables.patch
@@ -213,8 +234,10 @@ if [ "$platform" != "bcm53xx" ] && [ "$TESTING_KERNEL" != "y" ]; then
 fi
 
 # ubnt-ledbar - fix linux-6.x
-rm -rf package/kernel/ubnt-ledbar
-cp -a ../master/openwrt/package/kernel/ubnt-ledbar package/kernel/ubnt-ledbar
+if [ "$version" = "rc2" ]; then
+    rm -rf package/kernel/ubnt-ledbar
+    cp -a ../master/openwrt/package/kernel/ubnt-ledbar package/kernel/ubnt-ledbar
+fi
 
 # RTC
 if [ "$platform" = "rk3399" ] || [ "$platform" = "rk3568" ]; then
