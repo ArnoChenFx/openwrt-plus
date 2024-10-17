@@ -1,11 +1,16 @@
-# remove ssrplus
-rm -rf package/new/helloworld/luci-app-ssr-plus
-rm -rf package/new/helloworld/patch-luci-app-ssr-plus.patch
+#!/bin/bash
+
+# 自定义脚本
+
+# fallback udp_offload to kernel 6.6.43
+curl -s https://raw.githubusercontent.com/pmkol/openwrt-lite/patch/linux/hack-6.6/099-udp_offload-backto-43.patch > target/linux/generic/hack-6.6/099-udp_offload-backto-43.patch
+rm -f target/linux/generic/backport-6.6/611-01-v6.11-udp-Allow-GSO-transmit-from-devices-with-no-checksum.patch
+rm -f target/linux/generic/backport-6.6/611-03-v6.11-udp-Fall-back-to-software-USO-if-IPv6-extension-head.patch
 
 # add mihomo
 rm -rf package/new/helloworld/luci-app-mihomo
 rm -rf package/new/helloworld/mihomo
-git clone https://$github/pmkol/openwrt-mihomo package/new/openwrt-mihomo
+git clone https://$github/pmkol/openwrt-mihomo package/new/openwrt-mihomo --depth 1
 if [ "$MINIMAL_BUILD" = "y" ]; then
     if curl -s "https://$mirror/openwrt/23-config-minimal-common" | grep -q "^CONFIG_PACKAGE_luci-app-mihomo=y"; then
         mkdir -p files/etc/mihomo/run/ui
@@ -13,10 +18,10 @@ if [ "$MINIMAL_BUILD" = "y" ]; then
         curl -Lso files/etc/mihomo/run/GeoIP.dat https://$github/MetaCubeX/meta-rules-dat/releases/download/latest/geoip-lite.dat
         curl -Lso files/etc/mihomo/run/geoip.metadb https://$github/MetaCubeX/meta-rules-dat/releases/download/latest/geoip-lite.metadb
         curl -Lso files/etc/mihomo/run/ASN.mmdb https://$github/MetaCubeX/meta-rules-dat/releases/download/latest/GeoLite2-ASN.mmdb
-        curl -Lso metacubexd-gh-pages.tar.gz https://$github/MetaCubeX/metacubexd/archive/refs/heads/gh-pages.tar.gz
-        tar zxf metacubexd-gh-pages.tar.gz
-        rm metacubexd-gh-pages.tar.gz
-        mv metacubexd-gh-pages files/etc/mihomo/run/ui/metacubexd
+        curl -Lso metacubexd-1.151.0.tar.gz https://$github/MetaCubeX/metacubexd/archive/refs/tags/v1.151.0.tar.gz
+        tar zxf metacubexd-1.151.0.tar.gz
+        rm metacubexd-1.151.0.tar.gz
+        mv metacubexd-1.151.0 files/etc/mihomo/run/ui/metacubexd
     fi
 else
     if curl -s "https://$mirror/openwrt/23-config-common" | grep -q "^CONFIG_PACKAGE_luci-app-mihomo=y"; then
@@ -31,18 +36,38 @@ else
 fi
 
 # add ddns-go
-git clone https://$github/sirpdboy/luci-app-ddns-go package/new/ddns-go
-sed -i '/"description": "Grant UCI access for luci-app-ddns-go",/a \\t\t"order": 50,' package/new/ddns-go/luci-app-ddns-go/root/usr/share/rpcd/acl.d/luci-app-ddns-go.json
+git clone https://$github/sirpdboy/luci-app-ddns-go package/new/ddns-go --depth 1
+sed -i '3 a\\t\t"order": 50,' package/new/ddns-go/luci-app-ddns-go/root/usr/share/rpcd/acl.d/luci-app-ddns-go.json
+
+# add eqosplus
+git clone https://$github/pmkol/openwrt-eqosplus package/new/openwrt-eqosplus --depth 1
+
+# add qosmate
+git clone https://github.com/hudra0/qosmate package/new/qosmate --depth 1
+git clone https://github.com/pmkol/luci-app-qosmate package/new/luci-app-qosmate --depth 1
+
+# add luci-app-tailscale
+git clone https://github.com/asvow/luci-app-tailscale package/new/luci-app-tailscale --depth 1
+
+# add luci-app-upnp
+rm -rf feeds/luci/applications/luci-app-upnp
+git clone https://$github/pmkol/luci-app-upnp feeds/luci/applications/luci-app-upnp --depth 1
+
+# bump haproxy version
+rm -rf feeds/packages/net/haproxy
+cp -a ../master/packages/net/haproxy feeds/packages/net/haproxy
+sed -i '/ADDON+=USE_QUIC_OPENSSL_COMPAT=1/d' feeds/packages/net/haproxy/Makefile
+
+# bump iproute2 version
+rm -rf package/network/utils/iproute2
+cp -a ../master/openwrt/package/network/utils/iproute2 package/network/utils/iproute2
 
 # change geodata
 rm -rf package/new/helloworld/v2ray-geodata
-git clone https://$github/sbwml/v2ray-geodata package/new/helloworld/v2ray-geodata
+git clone https://$github/sbwml/v2ray-geodata package/new/helloworld/v2ray-geodata --depth 1
 sed -i 's#Loyalsoldier/geoip/releases/latest/download/geoip-only-cn-private.dat#MetaCubeX/meta-rules-dat/releases/download/latest/geoip-lite.dat#g; s#Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat#MetaCubeX/meta-rules-dat/releases/download/latest/geosite.dat#g' package/new/helloworld/v2ray-geodata/Makefile
 sed -i '/geoip_api/s#Loyalsoldier/v2ray-rules-dat#pmkol/geodata-lite#' package/new/helloworld/luci-app-passwall/root/usr/share/passwall/rule_update.lua
 sed -i '/geosite_api/s#Loyalsoldier/v2ray-rules-dat#MetaCubeX/meta-rules-dat#' package/new/helloworld/luci-app-passwall/root/usr/share/passwall/rule_update.lua
-
-# add natflow by default
-sed -i 's|\[\ \$(grep\ -c\ shortcut_fe\ /etc/config/firewall)\ -eq\ '\''0'\''\ \]\ \&\&\ uci\ set\ firewall.@defaults\[0\].flow_offloading='\''1'\''|\[\ \$(grep\ -c\ shortcut_fe\ /etc/config/firewall)\ -eq\ '\''0'\''\ \]\ \&\&\ \[\ \$(grep\ -c\ natflow_delay_pkts\ /etc/config/firewall)\ -eq\ '\''0'\''\ \]\ \&\&\ uci\ set\ firewall.@defaults\[0\].flow_offloading='\''1'\''|g' package/new/default-settings/default/zzz-default-settings
 
 # configure default-settings
 sed -i 's/openwrt\/luci/pmkol\/openwrt-plus/g' package/new/luci-theme-argon/luci-theme-argon/luasrc/view/themes/argon/footer.htm

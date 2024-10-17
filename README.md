@@ -27,19 +27,19 @@
   - [x] Shortcut-FE
 - 使用 OpenWrt+ImmortalWrt 软件源，支持更多插件的在线安装与升级
 - 最小化集成常用插件，修复多处上游插件BUG
-- Lite版本仅包含 Mihomo, Sing-box, WireGuard, DDNS, SMB, UPnP
+- Lite版本仅包含 Mihomo, Sing-box, WireGuard, DDNS, SMB, UPnP, QoSmate, Socat, ZeroTier
 
   Plus版本包含以下插件：
 
 | ⚓ 服务 | 🗳️ Docker  | 🩺 网络  |
 |  :----  |  :----  |  :----  |
 | PassWall | Dockerman | 网速测试 |
-| Mihomo | Docker | SQM队列管理 |
-| MosDNS | Dockerd | UPnP |
-| DDNS | Docker-compose | 带宽监控 |
-| 硬盘休眠 | | Socat |
-| Watchcat | | 访问控制 |
-| Aira2 | | IP限速 |
+| Mihomo | Docker | UPnP |
+| MosDNS | Dockerd | 带宽监控 |
+| DDNS | Docker-compose | Socat |
+| 硬盘休眠 | | QoSmate |
+| Watchcat | | |
+| Aira2 | | |
 | FRP客户端 | | |
 | 网络共享 | | |
 | 网络唤醒 | | |
@@ -157,7 +157,24 @@ export MINIMAL_BUILD=y
 ##### 只需在构建固件前执行以下命令即可覆盖默认 LAN 地址（默认：10.0.0.1）
 
 ```
+
 export LAN=10.0.0.1
+```
+
+### 使用 uhttpd 轻量 web 引擎
+##### 固件默认使用 Nginx（quic） 作为页面引擎，只需在构建固件前执行以下命令即可使用 uhttpd 取代 nginx
+##### Nginx 在具备公网的环境下可以提供更丰富的功能支持
+
+```
+export ENABLE_UHTTPD=y
+```
+
+### 禁用全模块编译（For developers）
+##### 启用该标志时，固件仅编译 config 指定的软件包和内核模块，但固件不再支持安装内核模块（opkg install kmod-xxx），强制安装模块将会导致内核崩溃
+##### 最大的可能性降低 OpenWrt 的编译耗时，适用于开发者调试构建
+
+```
+export NO_KMOD=y
 ```
 
 -----------------
