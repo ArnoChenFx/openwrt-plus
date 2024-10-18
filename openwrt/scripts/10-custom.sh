@@ -10,7 +10,7 @@ rm -f target/linux/generic/backport-6.6/611-03-v6.11-udp-Fall-back-to-software-U
 # fallback uboot-rockchip version
 if [ "$platform" = "rk3568" ]; then
     rm -rf package/boot/uboot-rockchip
-    git clone https://$github/pmkol/package_boot_uboot-rockchip package/boot/uboot-rockchip --depth 1
+    git clone https://$github/pmkol/package_boot_uboot-rockchip package/boot/uboot-rockchip -b v2024.04 --depth 1
 fi
 
 # add mihomo
