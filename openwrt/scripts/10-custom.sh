@@ -60,6 +60,10 @@ git clone https://github.com/asvow/luci-app-tailscale package/new/luci-app-tails
 rm -rf feeds/luci/applications/luci-app-upnp
 git clone https://$github/pmkol/luci-app-upnp feeds/luci/applications/luci-app-upnp --depth 1
 
+# bump dnsmasq version
+rm -rf package/network/services/dnsmasq
+cp -a ../master/openwrt/package/network/services/dnsmasq package/network/services/dnsmasq
+
 # bump haproxy version
 rm -rf feeds/packages/net/haproxy
 cp -a ../master/packages/net/haproxy feeds/packages/net/haproxy
