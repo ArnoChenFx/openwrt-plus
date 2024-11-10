@@ -3,9 +3,11 @@
 # 自定义脚本
 
 # fallback udp_offload to kernel 6.6.43
-curl -s https://raw.githubusercontent.com/pmkol/openwrt-lite/patch/linux/hack-6.6/099-udp_offload-backto-43.patch > target/linux/generic/hack-6.6/099-udp_offload-backto-43.patch
-rm -f target/linux/generic/backport-6.6/611-01-v6.11-udp-Allow-GSO-transmit-from-devices-with-no-checksum.patch
-rm -f target/linux/generic/backport-6.6/611-03-v6.11-udp-Fall-back-to-software-USO-if-IPv6-extension-head.patch
+if [ "$version" = "rc2" ]; then
+    #curl -s https://raw.githubusercontent.com/pmkol/openwrt-lite/patch/linux/hack-6.6/099-udp_offload-backto-43.patch > target/linux/generic/hack-6.6/099-udp_offload-backto-43.patch
+    curl -s https://raw.githubusercontent.com/pmkol/openwrt-lite/patch/linux/backport-6.6/099-udp-Compute-L4-checksum-as-usual-when-not-segmenting-the-skb.patch > target/linux/generic/backport-6.6/999-udp-Compute-L4-checksum-as-usual-when-not-segmenting-the-skb.patch
+    #rm -rf target/linux/generic/‎backport-6.6/611-03-v6.11-udp-Fall-back-to-software-USO-if-IPv6-extension-head.patch
+fi
 
 # fallback uboot-rockchip version
 if [ "$platform" = "rk3568" ]; then
@@ -55,6 +57,9 @@ git clone https://$github/pmkol/luci-app-qosmate package/new/luci-app-qosmate --
 
 # add luci-app-tailscale
 git clone https://$github/asvow/luci-app-tailscale package/new/luci-app-tailscale --depth 1
+rm -rf feeds/packages/net/tailscale
+cp -a ../master/packages/net/tailscale feeds/packages/net/tailscale
+sed -i '/\/etc\/init\.d\/tailscale/d;/\/etc\/config\/tailscale/d;' feeds/packages/net/tailscale/Makefile
 
 # add luci-app-upnp
 rm -rf feeds/luci/applications/luci-app-upnp

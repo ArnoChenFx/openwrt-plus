@@ -81,7 +81,7 @@ fi
 
 # Source branch
 if [ "$1" = "dev" ]; then
-    export branch=master
+    export branch=openwrt-24.10
     export version=snapshots-24.10
     export openwrt_version=openwrt-24.10
 elif [ "$1" = "rc2" ]; then
@@ -195,7 +195,6 @@ git clone https://$github/immortalwrt/packages master/immortalwrt_packages --dep
 if [ -d openwrt ]; then
     cd openwrt
     [ "$1" = "rc2" ] && echo "$CURRENT_DATE" > version.date
-    [ "$1" = "dev" ] && sed -i 's/$(VERSION_NUMBER),SNAPSHOT/$(VERSION_NUMBER),24.10-SNAPSHOT/g' include/version.mk
     curl -Os https://$mirror/openwrt/patch/key.tar.gz && tar zxf key.tar.gz && rm -f key.tar.gz
 else
     echo -e "${RED_COLOR}Failed to download source code${RES}"
@@ -373,7 +372,6 @@ if [ "$1" = "rc2" ]; then
         curl -s https://$mirror/openwrt/generic/config-gcc11 >> .config
     fi
 else
-    cp -a toolchain/gcc/patches-14.x toolchain/gcc/patches-15.x
     curl -s https://$mirror/openwrt/patch/generic-24.10/202-toolchain-gcc-add-support-for-GCC-15.patch | patch -p1
 fi
 [ "$USE_GCC13" = "y" ] && curl -s https://$mirror/openwrt/generic/config-gcc13 >> .config
